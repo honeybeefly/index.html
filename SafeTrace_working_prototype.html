@@ -1,0 +1,116 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>SafeTrace – working prototype</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f4f2fb;--card:#fff;--tx:#1d1a2e;--mu:#6a6682;--ac:#6c4cff;--ok:#0a9b7a;--bd:#ddd8f0;--wr:#c2410c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15131f;--card:#201d2e;--tx:#eeebff;--mu:#a29fbb;--bd:#35314a}}
+:root[data-theme="dark"]{--bg:#15131f;--card:#201d2e;--tx:#eeebff;--mu:#a29fbb;--bd:#35314a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.5}
+.w{max-width:760px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:4px 0}h2{font-size:18px;margin:0 0 8px}p{margin:6px 0;color:var(--mu)}
+.tag{font-size:12px;border:1px dashed var(--ac);color:var(--ac);padding:2px 8px;border-radius:99px}
+nav{display:flex;gap:6px;overflow-x:auto;margin:12px 0}
+nav button{white-space:nowrap;border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:8px 12px;border-radius:99px;cursor:pointer}
+nav button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin:10px 0}
+.g{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.b{display:block;width:100%;text-align:left;border:1px solid var(--ac);background:transparent;color:var(--tx);padding:12px;border-radius:12px;cursor:pointer;font-size:15px}
+.b:hover,.b.done{background:var(--ac);color:#fff}.b small{display:block;color:inherit;opacity:.75}
+.p{background:var(--ac);color:#fff;border:0;padding:9px 15px;border-radius:10px;cursor:pointer;font-size:14px}.p.o{background:transparent;color:var(--ac);border:1px solid var(--ac)}
+.ph{border:2px dashed var(--bd);border-radius:12px;padding:18px;text-align:center;color:var(--mu)}
+table{width:100%;border-collapse:collapse;font-size:14px}td{padding:6px 4px;border-bottom:1px solid var(--bd);vertical-align:top;word-break:break-word}td:first-child{color:var(--mu);width:38%}
+textarea{width:100%;min-height:96px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);padding:8px;font:13px/1.4 system-ui}
+canvas{max-width:100%;border:1px solid var(--bd);border-radius:10px;touch-action:none;cursor:crosshair;background:#fff}
+code{font-size:11px;word-break:break-all}.ok{color:var(--ok);cursor:pointer}.wr{border-left:4px solid var(--wr);padding-left:10px}
+.bl{height:64px;border-radius:10px;background:repeating-linear-gradient(45deg,#8b86a8,#8b86a8 8px,#a39fbd 8px,#a39fbd 16px);filter:blur(1px)}
+.sos{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--bd);padding:10px 16px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));font-size:13px;text-align:center}
+.v{display:none}.v.on{display:block}
+</style></head><body><div class="w">
+<span class="tag">Working prototype · runs in your browser · nothing is uploaded · sample data</span>
+<h1>🛡️ SafeTrace</h1><p>Private help for intimate-image abuse and blackmail. You are not at fault.</p>
+<nav id="n"></nav>
+
+<section class="v on" id="home"><div class="c"><h2>What is happening?</h2><div class="g">
+<button class="b" onclick="TR='B';go('verify')">Someone I know is threatening me<small>Track B · evidence dossier, reply guide, support</small></button>
+<button class="b" onclick="TR='A';go('verify')">My images or deepfakes are circulating<small>Track A · search, confirm, request removal</small></button></div></div>
+<div class="c"><h2>Our promises</h2><p>✔ Photos are processed on your device ✔ Face data is deleted every 48 hours unless you renew ✔ You, or someone you trust, confirm every match ✔ Nothing is shared without your consent</p></div></section>
+
+<section class="v" id="verify"><div class="c"><h2>Verify it's you</h2><p>Only you can search for you. Tap each step to simulate it.</p>
+<div class="g"><button class="b" onclick="this.classList.toggle('done')">📱 Phone OTP</button><button class="b" onclick="this.classList.toggle('done')">🪪 Government ID (eKYC)</button><button class="b" onclick="this.classList.toggle('done')">🤳 Live selfie check</button></div>
+<p><button class="p" onclick="go(TR=='A'?'consent':'threat')">Continue</button></p></div></section>
+
+<section class="v" id="threat"><div class="c"><h2>Threat received</h2><p>Choose a screenshot of the message. Don't reply or block yet. It is processed in your browser; this demo uploads nothing.</p>
+<input type="file" id="f" accept="image/*">
+<div id="ed" style="display:none"><p>Drag on the picture to cover anything explicit with solid black.</p><canvas id="cv"></canvas>
+<p><button class="p o" onclick="rects.pop();draw()">Undo cover</button> <button class="p" onclick="save()">Confirm and save redacted copy</button></p></div>
+<p id="msg" class="ok"></p></div>
+<div class="c"><h2>Is anyone in danger?</h2><p><label><input type="checkbox" id="r1" onchange="risk()"> They threaten violence, or I'm thinking of harming myself</label><br><label><input type="checkbox" id="mn" onchange="risk()"> I'm under 18</label></p>
+<div id="risk" class="wr" style="display:none"><p><b>Get help first.</b> Call <b>112</b> if you're in danger. Talk to <b>Tele-MANAS 14416</b> or <b>KIRAN 1800-599-0019</b>. Tell a trusted adult now and report on <b>1930</b> or cybercrime.gov.in.</p></div>
+<div id="minor" class="wr" style="display:none"><p><b>Under 18:</b> explicit images are never uploaded or stored. You must cover every explicit area before saving. We keep only the redacted copy, details and a hash. Keep the original phone unchanged for the police. Secure direct transfer to the cyber cell is a proposal needing police and NCPCR approval.</p></div></div>
+<div class="c" id="relwrap"><h2>Who is threatening you?</h2><p>You choose. We don't guess.</p><div class="g">
+<button class="b" onclick="rp(0)">Partner</button><button class="b" onclick="rp(1)">Ex</button><button class="b" onclick="rp(2)">Friend</button><button class="b" onclick="rp(3)">Stranger</button><button class="b" onclick="rp(4)">Enemy / other</button></div>
+<div id="rbox" style="display:none"><p>Suggested reply. Edit it, then copy and send it yourself:</p><textarea id="rt"></textarea>
+<p><button class="p" onclick="cp('rt')">Copy reply</button> <span id="cpm" class="ok"></span></p></div>
+<p><em>SafeTrace never sends messages. A reply can reduce escalation but can't stop the abuser. Wording to be reviewed by an NGO or lawyer.</em></p>
+<p><button class="p" onclick="go('evidence')">Continue to evidence</button></p></div></section>
+
+<section class="v" id="evidence"><div class="c"><h2>Capture before you block</h2><p>Sender details we read (sample). Tap ✔ to confirm each one.</p><table>
+<tr><td>Abuser's number</td><td>+91 98XXX XXX10 <span class="ok" onclick="this.textContent='✔ confirmed'">✔ confirm</span></td></tr>
+<tr><td>Username</td><td>@sample_user <span class="ok" onclick="this.textContent='✔ confirmed'">✔ confirm</span></td></tr>
+<tr><td>UPI ID demanded</td><td>sample@upi <span class="ok" onclick="this.textContent='✔ confirmed'">✔ confirm</span></td></tr></table></div>
+<div class="c"><h2>Your saved evidence</h2><div id="ev"></div>
+<p><button class="p" onclick="go('dossier')">Build my dossier</button> <button class="p o" onclick="go('reply')">How do I reply?</button> <button class="p o" onclick="items=[];renderE();$('msg').textContent='Evidence deleted from SafeTrace (demo). Delete only after police have your dossier.'">Delete evidence</button></p></div></section>
+
+<section class="v" id="dossier"><div class="c"><h2>Your police-ready dossier</h2>
+<p>Built from what you saved. Every file is hashed (SHA-256), with a custody log and a draft Section 63(4) BSA certificate (to be checked by counsel).</p>
+<textarea id="dt" readonly style="min-height:210px"></textarea>
+<p><button class="p" onclick="dl()">Download dossier (.txt)</button> <button class="p o" onclick="cp('dt')">Copy text</button> <span id="dm" class="ok"></span></p>
+<p>Take it to your cybercell or file at cybercrime.gov.in. Keep your original phone unchanged.</p></div></section>
+
+<section class="v" id="reply"><div class="c"><h2>Reply guidelines</h2><p>Always one tap away, also while search and removal run.</p>
+<table><tr><td>1 · Before replying</td><td>Upload screenshots first. Don't delete, pay or send more.</td></tr>
+<tr><td>2 · If you reply</td><td>One calm, firm message, then stop. Pick who it is on the Threat received screen.</td></tr>
+<tr><td>3 · Never</td><td>Don't meet them, negotiate or threaten back.</td></tr>
+<tr><td>4 · Then</td><td>Report on 1930 / cybercrime.gov.in and talk to someone you trust.</td></tr></table>
+<p><button class="p" onclick="go('threat')">Choose who is threatening me</button></p></div></section>
+
+<section class="v" id="consent"><div class="c"><h2>Consent and monitoring</h2><p>Your face data is held encrypted for 48 hours, then deleted.</p>
+<div class="ph">⏳ Time left: <b id="cd">48:00:00</b></div>
+<p><button class="p" onclick="end=Date.now()+48*36e5;tick()">Renew 48h (fresh live check)</button> <button class="p o" onclick="end=Date.now();tick()">Delete my data now</button> <button class="p o" onclick="go('track')">Start search</button></p></div></section>
+
+<section class="v" id="track"><div class="c"><h2>Matches to review <span class="tag">sample</span></h2><p>Face data time left: <b id="cd2"></b></p>
+<div class="g"><div><div class="bl"></div><p>site-example.test · 94% similar</p><p id="m1">Not reviewed</p><button class="p" onclick="m(1,1)">Yes, it's me</button> <button class="p o" onclick="m(1,0)">Not me</button></div>
+<div><div class="bl"></div><p>forum-example.test · 88% similar</p><p id="m2">Not reviewed</p><button class="p" onclick="m(2,1)">Yes, it's me</button> <button class="p o" onclick="m(2,0)">Not me</button></div></div>
+<p><b>Who reviews?</b><br><label><input type="radio" name="rv" checked> Me</label> <label><input type="radio" name="rv"> A trusted adult</label> <label><input type="radio" name="rv"> A trained NGO reviewer, with my consent</label></p>
+<p>Only confirmed matches are hashed and sent for removal.</p><p><button class="p o" onclick="go('consent')">Renew consent</button></p></div></section>
+
+<section class="v" id="help"><div class="c"><h2>Support, with your consent</h2><p>NGO counselling and legal aid partners · nothing shared without your yes.</p>
+<p><b>Self-harm and suicide helplines (free, 24/7)</b><br><b>Tele-MANAS</b> 14416 / 1800-891-4416<br><b>KIRAN</b> 1800-599-0019<br><b>Vandrevala</b> 9999 666 555</p>
+<p><b>Cyber crime helpline</b> 1930 · <b>Emergency</b> 112</p><p>Trained moderators and NGO partners work alongside the AI. They don't see raw images by default.</p></div></section>
+</div>
+<div class="sos">If you feel like harming yourself, call <b>14416</b> or <b>1800-599-0019</b> · Emergency <b>112</b> · Report <b>1930</b></div>
+<script>
+let TR="B",items=[],src=null,img=null,rects=[],dr=null,REL="",end=Date.now()+48*36e5;
+const $=id=>document.getElementById(id);
+const S=[["home","Start"],["verify","Verify"],["threat","Threat received"],["evidence","Evidence"],["dossier","Dossier"],["reply","Reply guide"],["consent","Consent"],["track","Image tracking"],["help","Support"]];
+const R=[["Partner","I'm not sending anything and I'm not paying. This is blackmail, and it's a crime. I've saved our messages. Don't contact me again."],["Ex","I won't pay or send anything. Threatening to share my images is a crime. I've saved everything and I will report it if this continues. Do not contact me again."],["Friend","This is blackmail and I won't pay or send anything. I'm reporting it. Don't contact me again."],["Stranger","(Best: don't reply. Capture the profile and chat, report the account, then block.) If you must: I won't pay or send anything. I'm reporting this account."],["Enemy / other","I won't pay or send anything. I'm reporting this. Don't contact me again."]];
+function go(id){document.querySelectorAll(".v").forEach(e=>e.classList.toggle("on",e.id===id));$("n").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.i===id));if(id=="evidence")renderE();if(id=="dossier")$("dt").value=dText();window.scrollTo(0,0)}
+S.forEach(([i,t])=>{const b=document.createElement("button");b.textContent=t;b.dataset.i=i;b.onclick=()=>go(i);$("n").appendChild(b)});
+function rp(i){REL=R[i][0];$("rbox").style.display="block";$("rt").value=R[i][1]}
+function cp(id){const t=$(id);t.select();let ok=false;try{ok=document.execCommand("copy")}catch(e){}try{navigator.clipboard.writeText(t.value);ok=true}catch(e){}const m=$(id=="rt"?"cpm":"dm");m.textContent=ok?"Copied":"Select the text and copy it manually";setTimeout(()=>m.textContent="",2500)}
+function risk(){const d=$("r1").checked||$("mn").checked;$("risk").style.display=d?"block":"none";$("minor").style.display=$("mn").checked?"block":"none";$("relwrap").style.display=d?"none":"block"}
+function msg(t){$("msg").textContent=t}
+function draw(){const c=$("cv"),x=c.getContext("2d");x.drawImage(img,0,0,c.width,c.height);x.fillStyle="#000";rects.forEach(r=>x.fillRect(r[0],r[1],r[2],r[3]))}
+$("f").onchange=e=>{const f=e.target.files[0];if(!f)return;if(!f.type.startsWith("image/")){msg("Please choose an image file.");return}src=f;const u=URL.createObjectURL(f);img=new Image();img.onload=()=>{const c=$("cv"),k=Math.min(1,600/img.width);c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);rects=[];draw();$("ed").style.display="block";msg("");URL.revokeObjectURL(u)};img.src=u};
+const cv=$("cv");function pt(e){const b=cv.getBoundingClientRect();return[(e.clientX-b.left)*cv.width/b.width,(e.clientY-b.top)*cv.height/b.height]}
+cv.onpointerdown=e=>{dr=pt(e);cv.setPointerCapture(e.pointerId)};
+cv.onpointermove=e=>{if(!dr)return;const p=pt(e);draw();const x=cv.getContext("2d");x.fillStyle="rgba(0,0,0,.85)";x.fillRect(dr[0],dr[1],p[0]-dr[0],p[1]-dr[1])};
+cv.onpointerup=e=>{if(!dr)return;const p=pt(e);rects.push([dr[0],dr[1],p[0]-dr[0],p[1]-dr[1]]);dr=null;draw()};
+async function sha(b){try{const d=await crypto.subtle.digest("SHA-256",b);return[...new Uint8Array(d)].map(x=>x.toString(16).padStart(2,"0")).join("")}catch(e){return"unavailable in this browser"}}
+async function save(){if(!src)return;const mn=$("mn").checked;if(mn&&!rects.length){msg("Under 18: cover every explicit area before saving.");return}draw();const blob=await new Promise(r=>cv.toBlob(r,"image/png"));const ho=await sha(await src.arrayBuffer()),hr=await sha(await blob.arrayBuffer());items.push({name:src.name,t:new Date().toLocaleString(),ho,hr,cov:rects.length,mn});$("ed").style.display="none";$("f").value="";src=null;msg("Saved in this demo (stays in your browser): redacted copy, metadata removed, SHA-256 of the original made on your device.");renderE()}
+function renderE(){$("ev").innerHTML=items.length?"<table>"+items.map((i,k)=>`<tr><td>${k+1}. ${i.name.replace(/[<>&]/g,"")}</td><td>${i.t}<br>${i.cov} area(s) covered${i.mn?" · under 18":""}<br>Original SHA-256:<br><code>${i.ho}</code></td></tr>`).join("")+"</table>":"<p>No evidence saved yet. Add a screenshot on the Threat received screen.</p>"}
+function dText(){const L=["SAFETRACE DOSSIER (DEMO)","Case ID: ST-0001 (sample)","Created: "+new Date().toLocaleString(),"Relationship chosen: "+(REL||"not chosen"),"","Evidence items: "+items.length];items.forEach((i,k)=>L.push((k+1)+". "+i.name+" | saved "+i.t+" | original SHA-256 "+i.ho+" | redacted SHA-256 "+i.hr+(i.mn?" | under 18: explicit parts covered on device":"")));L.push("","Sender details (sample, victim to confirm): +91 98XXX XXX10 | @sample_user | sample@upi","","Section 63(4) BSA certificate: draft Part A (hash and algorithm above); Part B if the court requires. Confirm legal details with counsel.","Keep the original phone unchanged. Report on 1930 or cybercrime.gov.in.");return L.join("\n")}
+function dl(){try{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([dText()],{type:"text/plain"}));a.download="SafeTrace_dossier_demo.txt";document.body.appendChild(a);a.click();a.remove();$("dm").textContent="Download started"}catch(e){$("dm").textContent="Use Copy text instead"}}
+function m(i,y){$("m"+i).textContent=y?"Confirmed: hash made, removal requests queued (demo)":"Rejected: hash deleted"}
+function tick(){const l=Math.max(0,end-Date.now()),h=Math.floor(l/36e5),mi=Math.floor(l%36e5/6e4),s=Math.floor(l%6e4/1e3),t=l?[h,mi,s].map(x=>String(x).padStart(2,"0")).join(":"):"Deleted";$("cd").textContent=t;$("cd2").textContent=t}
+setInterval(tick,1000);tick();go("home");
+</script></body></html>
